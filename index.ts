@@ -1,55 +1,53 @@
-// Import stylesheets
-// import "./style.css";
+// Define the URL for the dictionary API
+const dictionaryURL = "https://api.dictionaryapi.dev/api/v2/entries/en/";
 
-const dictionaryURL: string =
-  "https://api.dictionaryapi.dev/api/v2/entries/en/";
-const form: HTMLFormElement = document.querySelector(
-  "#defineform"
-) as HTMLFormElement;
-const wordheader = document.getElementById('word') as HTMLInputElement;
-const speech = document.getElementById('speech') as HTMLInputElement;
-const definitionText = document.getElementById("definitionText") as HTMLParagraphElement;
+// Get references to form elements
+const defineForm = document.querySelector("#defineform") as HTMLFormElement;
+const wordHeaderElement = document.getElementById('word') as HTMLInputElement;
+const partOfSpeechElement = document.getElementById('speech') as HTMLInputElement;
+const definitionTextElement = document.getElementById("definitionText") as HTMLParagraphElement;
 
-form.onsubmit = () => {
-  const formData = new FormData(form);
+// Set up form submit event handler
+defineForm.onsubmit = async () => {
+  // Get the word the user entered
+  const formData = new FormData(defineForm);
   const word = formData.get("defineword") as string;
+
   console.log(word);
 
-  definitionText!.innerHTML = "";
-  fetchDefinition(word).then((response) => {
-    wordheader!.innerHTML = response[0].word;
-    speech!.innerHTML = response[0].meanings[0].partOfSpeech;
-    var index = 0;
-    
-    response[0].meanings.forEach((def) => {
-      console.log(def.definitions[index]);
-      definitionText!.innerHTML += `<p>${def.definitions[index].definition}</p>`;
-      for (var i = 0; i < def.definitions[index].synonyms.length; i++) {
-        definitionText!.innerHTML += `<p>${def.definitions[index].synonyms[i]}</p>`;
-      }
-      for (var i = 0; i < def.definitions[index].antonyms.length; i++) {
-        definitionText!.innerHTML += `<p>${def.definitions[index].antonyms[i]}</p>`;
-      }
-    });
-  });
-
-  return false; // prevent reload
-};
-
-async function fetchDefinition(word: string) {
+  // Clear the definition text
+  definitionTextElement.innerHTML = "";
   try {
-    const response = await fetch(dictionaryURL + word, {
-      method: "GET",
-    })
-      .then((response) => {
-        return response.json();
-      })
-      .then((data) => {
-        return data;
+    // Call the fetchDefinition function to get the definition of the word
+    const response = await fetchDefinition(word);
+    const definition = response[0];
+
+    // Set the word and part of speech
+    wordHeaderElement.innerHTML = definition.word;
+    partOfSpeechElement.innerHTML = definition.meanings[0].partOfSpeech;
+
+    // Display each definition and its synonyms and antonyms
+    definition.meanings.forEach(meaning => {
+      meaning.definitions.forEach(definition => {
+        definitionTextElement.innerHTML += `
+          <p>${definition.definition}</p>
+          <p>Synonyms: ${definition.synonyms.join(', ')}</p>
+          <p>Antonyms: ${definition.antonyms.join(', ')}</p>
+        `;
       });
-    console.log(response);
-    return response;
+    });
   } catch (error) {
     console.log(error);
+    definitionTextElement.innerHTML = "Oops, something went wrong. Please try again later.";
   }
+
+  // Prevent the page from reloading when the form is submitted
+  return false;
+};
+
+// Function to fetch the definition of a word from the API
+async function fetchDefinition(word: string) {
+  const response = await fetch(dictionaryURL + word);
+  const data = await response.json();
+  return data;
 }
